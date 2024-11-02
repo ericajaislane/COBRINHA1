@@ -1,0 +1,203 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <windows.h>
+#include <conio.h>
+#include <time.h>
+#include <locale.h>
+
+int c[300][20], pontos = 1, cx, cy;
+int comida[20], velo = 150;
+int pontuacaoTotal = 0; 
+const int largura = 50;
+const int altura = 20;
+
+void setCor(int cor) {
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), cor);
+}
+
+void gotoxy(int x, int y) {
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), (COORD){x, y});
+}
+
+void desenha() {
+    setCor(10); // Cor verde
+    int i = 0;
+    while (i < pontos) {
+        gotoxy(c[i][0], c[i][1]);
+        printf("%c", 219);
+        i++;
+    }
+    setCor(7); 
+}
+
+void atualiza() {
+    gotoxy(c[pontos][0], c[pontos][1]);
+    printf(" ");
+    int i = pontos;
+    while (i > 0) {
+        c[i][0] = c[i - 1][0];
+        c[i][1] = c[i - 1][1];
+        i--;
+    }
+}
+
+int analiza() {
+    int i = 1;
+    while (i < pontos) {
+        if (cx == c[i][0] && cy == c[i][1]) {
+            return 1; // Colidiu com o corpo
+        }
+        i++;
+    }
+    return 0;
+}
+
+// Função para gerar comida
+void geraComida() {
+    int valido = 0;
+    while (!valido) {
+        gotoxy(comida[0], comida[1]);
+        printf(" ");
+        srand(time(NULL));
+        comida[0] = (rand() % (largura - 1)) + 1;
+        comida[1] = (rand() % (altura - 1)) + 1;
+
+        valido = 1;
+        int i = 0;
+        while (i < pontos) {
+            if (c[i][0] == comida[0] && c[i][1] == comida[1]) {
+                valido = 0; 
+                break;
+            }
+            i++;
+        }
+    }
+    gotoxy(comida[0], comida[1]);
+    printf("%c", 4); 
+    
+	}
+void mostrarEstatisticas() {
+    gotoxy(largura + 2, 2);
+    printf("Pontos: %d\t", pontos);
+    gotoxy(largura + 2, 4);
+    printf("Velocidade: %.2f caracteres\n", 1000.0 / velo);
+    gotoxy(largura + 2, 6);
+    printf("Pontuação Total: %d\n", pontuacaoTotal);
+}
+
+void menuInicial() {
+    system("cls");
+    printf("===== Jogo da Cobrinha =====\n");
+    printf("1. Jogar\n");
+    printf("2. Sair\n");
+    printf("Escolha uma opção: ");
+}
+
+// Função do jogo
+void jogo() {
+    int gameover = 0;
+    int tecla;
+
+    // Inicializa a posição da cobrinha no centro da tela
+    cx = largura / 2;
+    cy = altura / 2;
+
+    // Desenhar bordas
+    int i = 0;
+    while (i < largura) {
+        gotoxy(i, 0);
+        printf("%c", 219);
+        i++;
+    }
+    i = 0;
+    while (i < altura) {
+        gotoxy(largura, i);
+        printf("%c", 219);
+        i++;
+    }
+    i = largura;
+    while (i >= 0) {
+        gotoxy(i, altura);
+        printf("%c", 219);
+        i--;
+    }
+    i = altura;
+    while (i > 0) {
+        gotoxy(0, i);
+        printf("%c", 219);
+        i--;
+    }
+
+    geraComida(); 
+    desenha();
+    tecla = 'd'; // Direção inicial para a direita
+
+    while (!gameover) {
+        mostrarEstatisticas();
+        c[0][0] = cx;
+        c[0][1] = cy;
+
+        if (kbhit()) {
+            tecla = getch();
+        }
+
+        // Movimentação da cobrinha
+        if (tecla == 'w' || tecla == 'W' || tecla == 72) cy--;
+        if (tecla == 'a' || tecla == 'A' || tecla == 75) cx--;
+        if (tecla == 's' || tecla == 'S' || tecla == 80) cy++;
+        if (tecla == 'd' || tecla == 'D' || tecla == 77) cx++;
+
+        // Verifica se a cobrinha colidiu com a parede
+        if (cx < 1 || cx >= largura || cy < 1 || cy >= altura) {
+            gameover = 1; // Colisão com a parede
+        }
+
+        if (cx == comida[0] && cy == comida[1]) {
+            pontos++;
+            pontuacaoTotal++; // Incrementa a pontuação total
+            if (velo > 50) velo -= 10; // Aumenta a velocidade
+            geraComida();
+        }
+
+        gameover |= analiza(); // Verifica colisão com o corpo
+        atualiza();
+        desenha();
+        gotoxy(largura + 2, altura);
+        Sleep(velo);
+    }
+
+    // Mensagem de perda
+    system("cls");
+    setCor(12); // Cor vermelha
+    printf("VOCÊ PERDEU KKKKK\n");
+    setCor(7); // Volta para a cor padrão
+    printf("Você fez %d pontos.\n", pontos);
+    printf("Pontuação Total: %d\n", pontuacaoTotal);
+    printf("Desenvolvido por Erica Jaislane.\n");
+    system("pause");
+}
+
+int main() {
+    setlocale(LC_ALL, "pt_BR"); 
+    int opcao;
+    do {
+        menuInicial();
+        scanf("%d", &opcao);
+        switch (opcao) {
+            case 1:
+                pontos = 1; 
+                velo = 150; 
+                jogo();
+                break;
+            case 2:
+                printf("Saindo do jogo...\n");
+                break;
+            default:
+                printf("Opção inválida! Tente novamente.\n");
+                system("pause");
+        }
+    } while (opcao != 2);
+
+    return 0;
+}
+
